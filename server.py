@@ -1,25 +1,23 @@
 import os
+import time
+from datetime import datetime
 import json
 import argparse
 import toml
 from threading import Thread
-import time
-import uuid
-from collections import deque
 import torch
 from PIL import Image
 from diffusers import StableDiffusionXLPipeline
 from pyngrok import ngrok  
 from flask import Flask, request, jsonify
-from src.server_utils import image_to_base64
-
+from src.server_utils import image_to_base64, RequestQueue, save_results, DATETIME_FORMAT, KST, AVG_GENERATION_TIME
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 # 요청 큐와 결과 저장소
-request_queue = deque()
-current_request = []
-
+request_queue = RequestQueue()
 
 def parse_args(input_args=None):
     parser = argparse.ArgumentParser()
@@ -50,7 +48,7 @@ def process_batch():
             
             # 최대 batch_size 만큼의 요청을 가져옴
             for _ in range(min(config['BATCH_SIZE'], len(request_queue))):
-                batch.append(request_queue.popleft())
+                batch.append(request_queue.dequeue_request(store_in_active=True))
             # 요청 처리
             model_inference(batch)
             
@@ -58,9 +56,8 @@ def process_batch():
 
 def model_inference(batch):
     prompts = []
-    for req_id, input_data, req_time in batch:
-        current_request.append(req_id)
-        prompts.append(config['PROMPT_PREFIX'] + input_data['prompt'] + config['PROMPT_POSTFIX'])
+    for data in batch:
+        prompts.append(config['PROMPT_PREFIX'] + data['prompt'] + config['PROMPT_POSTFIX'])
         
     results = pipe(prompt=prompts,
                    num_inference_steps=30,
@@ -70,28 +67,32 @@ def model_inference(batch):
                    guidance_scale=7,
                    ).images
     
-    for ((req_id, input_data, req_time), result_img) in zip(batch, results):
-        result_path = os.path.join(config['RESULT_DIR'], f"{req_id}.jpg")
-        result_img.save(result_path, "JPEG")
-        current_request.remove(req_id)
+    for (data, result_img) in zip(batch, results):
+        save_results(data, result_img, config)
+        request_queue.finish_request(data['req_id'])
         
 @app.route('/predict', methods=['POST'])
 def predict():
     input_data = request.get_json()
-    req_id = str(uuid.uuid4())  # 고유한 요청 ID 생성
-    req_time = time.time()
-    req_ahead = len(request_queue)
-    request_queue.append((req_id, input_data, req_time))
+    
+    # 해당 u_id의 요청이 대기/생성 중이라면, 요청을 거부
+    if request_queue.find_by(key='u_id', value=input_data['u_id'])[0] >= 0:
+        return jsonify({
+            "status": "duplicated", 
+            }), 401
+        
+    req_id, req_time, req_ahead = request_queue.enqueue_request(input_data)
+   
     return jsonify({
         "status": "queued",
         "request_id": req_id,
         "request_ahead": req_ahead,
-        "eta": 12 * (req_ahead+1)
+        "eta": AVG_GENERATION_TIME * (req_ahead)
         }), 200
 
 @app.route('/result/<req_id>', methods=['GET'])
 def get_result(req_id):
-    result_file = os.path.join(config['RESULT_DIR'], f"{req_id}.jpg")
+    result_file = os.path.join(config['RESULT_DIR'], "images", f"{req_id}.jpg")
     
     if os.path.exists(result_file):
         b64_img = image_to_base64(result_file)
@@ -101,24 +102,23 @@ def get_result(req_id):
             "requests_ahead": 0, 
             "eta": 0
             }), 201
-    elif req_id in current_request:
-        return jsonify({
-            "status": "generating",
-            "requests_ahead": 0, 
-            "eta": 12
-            }), 202
     else:
-        queue_position = None
-        for index, (queued_req_id, _, _) in enumerate(request_queue):
-            if queued_req_id == req_id:
-                queue_position = index
-                break
+        req_ahead, data = request_queue.find_by(key='req_id', value=req_id)
+        if req_ahead == 0:
+            time_active = datetime.strptime(data['time_active'], DATETIME_FORMAT).replace(tzinfo=KST)
+            time_current = datetime.now(KST)
+            elapsed_time = time_current - time_active
+            return jsonify({
+                "status": "generating",
+                "requests_ahead": req_ahead, 
+                "eta": AVG_GENERATION_TIME - elapsed_time.total_seconds()
+            }), 202
             
-        if queue_position is not None:
+        elif req_ahead > 0:
             return jsonify({
                 "status": "queued", 
-                "requests_ahead": queue_position,
-                "eta": 12 * (queue_position+1)
+                "requests_ahead": req_ahead,
+                "eta": AVG_GENERATION_TIME * req_ahead
                 }), 203
         
         else:

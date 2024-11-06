@@ -1,0 +1,7 @@
+torch==1.12.1+cu102
+torchvision==0.13.1+cu102
+diffusers
+gradio
+toml
+flask
+pyngrok
