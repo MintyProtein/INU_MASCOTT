@@ -3,7 +3,7 @@ BASE_MODEL = "cagliostrolab/animagine-xl-3.1"
 LORA = "SungjinWi/INU_MASCOTT"
 
 PROMPT_PREFIX = '1boy, "TOK", '
-PROMPT_POSTFIX = 'white background'
+PROMPT_POSTFIX = ', simple, best quality'
 NEG_PROMPT = "nsfw, lowres, (bad), error, fewer, extra, missing, worst quality, low quality, unfinished, displeasing,"
 RESULT_DIR = "./server_outputs"
 BATCH_SIZE = 1

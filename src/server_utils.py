@@ -1,6 +1,7 @@
 import os
 import time
 from datetime import datetime, timedelta, timezone
+from flask import request
 import json
 import base64
 import time
@@ -10,13 +11,27 @@ from PIL import Image
 
 KST = timezone(timedelta(hours=9, minutes=11))
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
-AVG_GENERATION_TIME = 12
+AVG_GENERATION_TIME = 13
 
 def image_to_base64(image_path):
     with open(image_path, "rb") as image_file:
         # 이미지를 바이너리 모드로 읽어 base64로 인코딩
         encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
     return encoded_string
+
+def validate_json(required_fields):
+    def decorator(f):
+        def wrapper(*args, **kwargs):
+            data = request.get_json()
+            if not data:
+                return jsonify({"status": "error", "message": "Request body must be JSON"}), 400
+            missing_fields = [field for field in required_fields if field not in data]
+            if missing_fields:
+                return jsonify({"status": "error", "message": missing_fields}), 400
+            return f(*args, **kwargs)
+        wrapper.__name__ = f.__name__
+        return wrapper
+    return decorator
 
 def save_results(data: dict, img: Image, config: dict):
     img_path = os.path.join(config['RESULT_DIR'], "images", f"{data['req_id']}.jpg")
@@ -46,7 +61,15 @@ class RequestQueue(deque):
         self.append(data)
         return data['req_id'], data['time_req'], req_ahead
     
-    def dequeue_request(self, store_in_active=True):
+    def dequeue_request(self, store_in_active=True) -> dict:
+        """요청 큐의 첫번째 원소를 꺼내어 리턴합니다.
+
+        Args:
+            store_in_active (bool, optional): 꺼낸 요청의 데이터를 self._active_requests에 저장할지 결정합니다(탐색에 필요).
+
+        Returns:
+            dict: 큐의 첫번째 원소
+        """
         item = self.popleft()
         if store_in_active:
             item['time_active'] = datetime.now(KST).strftime(DATETIME_FORMAT)

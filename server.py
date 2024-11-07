@@ -10,7 +10,7 @@ from PIL import Image
 from diffusers import StableDiffusionXLPipeline
 from pyngrok import ngrok  
 from flask import Flask, request, jsonify
-from src.server_utils import image_to_base64, RequestQueue, save_results, DATETIME_FORMAT, KST, AVG_GENERATION_TIME
+from src.server_utils import image_to_base64, RequestQueue, save_results, DATETIME_FORMAT, KST, AVG_GENERATION_TIME, validate_json
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -71,14 +71,17 @@ def model_inference(batch):
         save_results(data, result_img, config)
         request_queue.finish_request(data['req_id'])
         
+# 이미지 생성 요청
 @app.route('/predict', methods=['POST'])
+@validate_json(['u_id', 'prompt'])
 def predict():
     input_data = request.get_json()
     
     # 해당 u_id의 요청이 대기/생성 중이라면, 요청을 거부
     if request_queue.find_by(key='u_id', value=input_data['u_id'])[0] >= 0:
         return jsonify({
-            "status": "duplicated", 
+            "status": "error", 
+            "message": "duplicated requests`"
             }), 401
         
     req_id, req_time, req_ahead = request_queue.enqueue_request(input_data)
@@ -90,10 +93,13 @@ def predict():
         "eta": AVG_GENERATION_TIME * (req_ahead)
         }), 200
 
+# req_id를 기반으로 요청의 상태/결과를 조회
 @app.route('/result/<req_id>', methods=['GET'])
 def get_result(req_id):
+    
     result_file = os.path.join(config['RESULT_DIR'], "images", f"{req_id}.jpg")
     
+    # 생성이 완료되어 결과 파일이 존재하는 경우
     if os.path.exists(result_file):
         b64_img = image_to_base64(result_file)
         return jsonify({
@@ -104,6 +110,8 @@ def get_result(req_id):
             }), 201
     else:
         req_ahead, data = request_queue.find_by(key='req_id', value=req_id)
+        
+        # 작업이 진행 중인 경우 (request_queue._active_requests에 req_id가 존재하는 경우)
         if req_ahead == 0:
             time_active = datetime.strptime(data['time_active'], DATETIME_FORMAT).replace(tzinfo=KST)
             time_current = datetime.now(KST)
@@ -113,7 +121,8 @@ def get_result(req_id):
                 "requests_ahead": req_ahead, 
                 "eta": AVG_GENERATION_TIME - elapsed_time.total_seconds()
             }), 202
-            
+        
+        # 작업이 대기 중인 경우
         elif req_ahead > 0:
             return jsonify({
                 "status": "queued", 
@@ -121,10 +130,33 @@ def get_result(req_id):
                 "eta": AVG_GENERATION_TIME * req_ahead
                 }), 203
         
+        # 요청된 req_id를 찾을 수 없는 경우
         else:
-            return jsonify({"status": "not_found"}), 404
+            return jsonify({"status": "error", "message": "req_id not found"}), 404
         
+
+    
+@app.route('/ratings', methods=['POST'])
+@validate_json(['u_id', 'req_id', 'rating'])
+def post_ratings():
+    input_data = request.get_json()
+    
+    if (input_data['rating'] < 0 or input_data['rating'] > 5):
+        return jsonify({"status": "error", "message": "The rating should be in range [0,5]"}), 400
+    
+    data = {
+        'u_id': input_data['u_id'],
+        'req_id': input_data['req_id'],
+        'rating': input_data['rating']
+    }
+    file_path = os.path.join(config['RESULT_DIR'], "ratings.jsonl")
+    with open(file_path, 'a') as file:
+        json_line = json.dumps(data)
+        file.write(json_line + '\n')
         
+    return jsonify({"status": "success"}), 200
+    
+
 if __name__ == "__main__":
     args = parse_args()
     device = torch.device('cuda')
