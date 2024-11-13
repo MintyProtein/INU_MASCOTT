@@ -3,12 +3,11 @@ from PIL import Image
 import gradio as gr
 import numpy as np
 import torch
-from diffusers import (
-    StableDiffusionXLPipeline, AutoencoderKL, EulerAncestralDiscreteScheduler
-)   
+from diffusers import StableDiffusionXLPipeline
 
 PROMPT_PREFIX = '1boy, "TOK", '
 PROMPT_POSTFIX = ''
+NEG_PROMPT = "nsfw, nude, lowres, (bad), error, fewer, extra, missing, worst quality, low quality, bad anatomy, unfinished, displeasing,"
 def parse_args(input_args=None):
     parser = argparse.ArgumentParser(description="Simple example of a training script.")
     parser.add_argument(
@@ -76,7 +75,7 @@ if __name__ == "__main__":
                         label="Negative Prompt",
                         placeholder="Insert your negative prompt here:", scale=5, container=False
                     )
-                    neg_prompt.value = "nsfw, lowres, (bad), error, fewer, extra, missing, worst quality, low quality, unfinished, displeasing,"
+                    neg_prompt.value = NEG_PROMPT
                     generate_bt = gr.Button("Generate", scale=1)
 
             image = gr.Image(type="filepath")

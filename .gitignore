@@ -3,3 +3,5 @@ __pycache__/
 server_outputs/
 
 test/
+datasets/
+train_results/

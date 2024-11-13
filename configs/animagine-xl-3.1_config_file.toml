@@ -1,0 +1,75 @@
+[sdxl_arguments]
+cache_text_encoder_outputs = false
+no_half_vae = false
+min_timestep = 0
+max_timestep = 1000
+[model_arguments]
+pretrained_model_name_or_path = "cagliostrolab/animagine-xl-3.1"
+vae = "cagliostrolab/animagine-xl-3.1"
+
+[dataset_arguments]
+shuffle_caption = true
+debug_dataset = false
+in_json = "/hdd1/aidml/sjwi/INU_Torchy/datasets/INU_0501/INU_0501.json"
+train_data_dir = "/hdd1/aidml/sjwi/INU_Torchy/datasets/INU_0501"
+dataset_repeats = 2
+keep_tokens_separator = "|||"
+resolution = "1024, 1024"
+caption_dropout_rate = 0
+caption_tag_dropout_rate = 0
+caption_dropout_every_n_epochs = 0
+token_warmup_min = 1
+token_warmup_step = 0
+
+[training_arguments]
+output_dir = "/hdd1/aidml/sjwi/INU_Torchy/train_results/"
+output_name = "INU_lora"
+save_every_n_steps = 500
+save_last_n_steps = 3000
+save_state = true
+train_batch_size = 2
+max_token_length = 225
+mem_eff_attn = false
+xformers = false
+sdpa = false
+max_train_steps = 5000
+max_data_loader_n_workers = 4
+persistent_data_loader_workers = true
+gradient_checkpointing = true
+gradient_accumulation_steps = 1
+ddp_gradient_as_bucket_view = true
+ddp_static_graph = true
+ddp_timeout = 100000
+num_cpu_threads_per_process = 4
+
+[logging_arguments]
+log_with = "wandb"
+log_tracker_name = "animagine-xl-3.1"
+logging_dir = "/hdd1/aidml/sjwi/INU_Torchy/train_results/logs"
+
+[sample_prompt_arguments]
+sample_every_n_steps = 500
+sample_sampler = "euler_a"
+
+[saving_arguments]
+save_model_as = "safetensors"
+
+[optimizer_arguments]
+optimizer_type = "prodigy"
+learning_rate = 1
+network_train_unet_only = true
+train_text_encoder = false
+text_encoder_learning_rate = 0
+optimizer_args =  ["decouple=True", "weight_decay=0.01","use_bias_correction=True"]
+lr_scheduler = "cosine_with_restarts"
+
+[advanced_training_config]
+resume_from_huggingface = false
+
+[additional_network_arguments]
+no_metadata = false
+network_module = "networks.lora"
+network_dim = 4
+network_alpha = 1
+network_args = []
+network_train_unet_only = true

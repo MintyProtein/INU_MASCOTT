@@ -1,0 +1,39 @@
+[prompt]
+negative_prompt = "nsfw, nude, lowres, (bad), error, fewer, extra, missing, worst quality, low quality, bad anatomy, unfinished, displeasing,"
+scale = 7
+sample_steps = 30
+
+[[prompt.subset]]
+prompt = "1boy, \"TOK\", driving, racing car, sunglasses, best quality, safe, masterpiece "
+width = 1024
+height = 1024
+
+[[prompt.subset]]
+prompt = "1boy, \"TOK\", astronaut, floating, spacesuit, stars, space background , best quality, safe, masterpiece "
+width = 1024
+height = 1024
+
+[[prompt.subset]]
+prompt = "1boy, \"TOK\", wearing police suit, holding handcuff, angry face, empty background, best quality, safe, masterpiece "
+width = 1024
+height = 1024
+
+[[prompt.subset]]
+prompt = "1boy, \"TOK\", taekwondo, black belt, focused face, best quality, safe, masterpiece "
+width = 1024
+height = 1024
+
+[[prompt.subset]]
+prompt = "1boy, \"TOK\", surfing, ocean wave background, hawaiian shirts, best quality, safe, masterpiece "
+width = 1024
+height = 1024
+
+[[prompt.subset]]
+prompt = "1boy, \"TOK\",  playing golf, golf uniform, grass background, best quality, safe, masterpiece "
+width = 1024
+height = 1024
+
+[[prompt.subset]]
+prompt = "1boy, \"TOK\", sleeping, bed, peaceful face, pillow, night window, room background, best quality, safe, masterpiece "
+width = 1024
+height = 1024
