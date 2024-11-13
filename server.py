@@ -144,11 +144,14 @@ def post_ratings():
     if (input_data['rating'] < 0 or input_data['rating'] > 5):
         return jsonify({"status": "error", "message": "The rating should be in range [0,5]"}), 400
     
+    comment = input_data['comment'] if 'comment' in input_data else ""
     data = {
         'u_id': input_data['u_id'],
         'req_id': input_data['req_id'],
-        'rating': input_data['rating']
+        'rating': input_data['rating'],
+        'comment': comment
     }
+    
     file_path = os.path.join(config['RESULT_DIR'], "ratings.jsonl")
     with open(file_path, 'a') as file:
         json_line = json.dumps(data)

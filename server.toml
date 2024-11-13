@@ -1,10 +1,10 @@
 
 BASE_MODEL = "cagliostrolab/animagine-xl-3.1"
-LORA = "SungjinWi/INU_MASCOTT"
+LORA = "/hdd1/aidml/sjwi/INU_torchy_generator/train_result/outputs/animagine-xl-3.1_1108/lora.safetensors"
 
-PROMPT_PREFIX = '1boy, "TOK", '
-PROMPT_POSTFIX = ', simple, best quality'
-NEG_PROMPT = "nsfw, lowres, (bad), error, fewer, extra, missing, worst quality, low quality, unfinished, displeasing,"
+PROMPT_PREFIX = '1boy, "TOK", blue hair, '
+PROMPT_POSTFIX = ', best quality, masterpiece'
+NEG_PROMPT = "nsfw, nude, lowres, (bad), error, fewer, extra, missing, worst quality, low quality, bad anatomy, unfinished, displeasing,"
 RESULT_DIR = "./server_outputs"
 BATCH_SIZE = 1
 

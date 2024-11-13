@@ -2,7 +2,4 @@
 __pycache__/
 server_outputs/
 
-test.sh
-test_pred.sh
-test_result.sh
-test.py
+test/
