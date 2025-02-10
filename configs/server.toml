@@ -1,12 +1,12 @@
 
 BASE_MODEL = "cagliostrolab/animagine-xl-3.1"
-LORA = "/hdd1/aidml/sjwi/INU_torchy_generator/train_result/outputs/animagine-xl-3.1_1108/lora.safetensors"
+LORA = "/data2/aidml/sjwi/INU_torchy_generator/train_result/outputs/animagine-xl-3.1_1108/animagine_lora.safetensors"
 
 PROMPT_PREFIX = '1boy, "TOK", blue hair, '
-PROMPT_POSTFIX = ', best quality, masterpiece'
+PROMPT_POSTFIX = ', very aesthetic, best quality, masterpiece'
 NEG_PROMPT = "nsfw, nude, lowres, (bad), error, fewer, extra, missing, worst quality, low quality, bad anatomy, unfinished, displeasing,"
 RESULT_DIR = "./server_outputs"
 BATCH_SIZE = 1
 
 PORT = 5000
-NGROK_HOSTNAME = "YOUR_NGROK_DOMAIN"
+NGROK_HOSTNAME = "inumascott.ngrok.dev"

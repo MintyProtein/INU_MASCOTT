@@ -5,7 +5,8 @@ import numpy as np
 import torch
 from diffusers import StableDiffusionXLPipeline
 
-PROMPT_PREFIX = '1boy, "TOK", '
+
+PROMPT_PREFIX = '1boy, "TOK", ' # 횃불이를 "TOK"라는 토큰으로 지정해 모델이 학습됨
 PROMPT_POSTFIX = ''
 NEG_PROMPT = "nsfw, nude, lowres, (bad), error, fewer, extra, missing, worst quality, low quality, bad anatomy, unfinished, displeasing,"
 def parse_args(input_args=None):
@@ -14,7 +15,7 @@ def parse_args(input_args=None):
         "--model", type=str, default="cagliostrolab/animagine-xl-3.1"
     )
     parser.add_argument(
-        "--lora", type=str, default="/hdd1/aidml/sjwi/INU_torchy_generator/train_result/outputs/animagine-xl-3.1_0505_5/animagine-xl-3.1.safetensors"
+        "--lora", type=str, default="SungjinWi/INU_MASCOTT"
     )
     if input_args is not None:
         args = parser.parse_args(input_args)

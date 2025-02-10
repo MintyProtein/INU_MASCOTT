@@ -22,7 +22,7 @@ request_queue = RequestQueue()
 def parse_args(input_args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--config_file", type=str, default="server.toml"
+        "--config_file", type=str, default="configs/server.toml"
     )
     if input_args is not None:
         args = parser.parse_args(input_args)
@@ -38,6 +38,8 @@ def load_model(config, device):
         use_safetensors=True,
     )
     pipe.load_lora_weights(config['LORA'])
+    pipe.fuse_lora()
+    pipe.unload_lora_weights()
     pipe.to(device)
     return pipe
 
