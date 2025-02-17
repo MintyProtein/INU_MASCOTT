@@ -7,11 +7,14 @@ import toml
 from threading import Thread
 import torch
 from PIL import Image
-from diffusers import StableDiffusionXLPipeline
+from transformers import pipeline
+from diffusers import StableDiffusionXLPipeline, EulerAncestralDiscreteScheduler
 from pyngrok import ngrok  
 from flask import Flask, request, jsonify
+from src.safety_checker import KeywordNSFWFilter
 from src.server_utils import image_to_base64, RequestQueue, save_results, DATETIME_FORMAT, KST, AVG_GENERATION_TIME, validate_json
 from flask_cors import CORS
+
 
 app = Flask(__name__)
 CORS(app)
@@ -35,6 +38,7 @@ def load_model(config, device):
     pipe = StableDiffusionXLPipeline.from_pretrained(
         config["BASE_MODEL"],
         torch_dtype=torch.float16,
+        custom_pipeline="lpw_stable_diffusion_xl",
         use_safetensors=True,
     )
     pipe.load_lora_weights(config['LORA'])
@@ -57,13 +61,21 @@ def process_batch():
         time.sleep(1) 
 
 def model_inference(batch):
-    prompts = []
     for data in batch:
-        prompts.append(config['PROMPT_PREFIX'] + data['prompt'] + config['PROMPT_POSTFIX'])
-        
+        nsfw_result, safety_score = safety_checker(data['prompt'])[0].values()
+        if nsfw_result.lower() == 'nsfw':
+            safety_score = 1 - safety_score
+
+        if safety_score < 0.2:
+            prompt = "police uniform, angry face, police car"
+        else:
+            prompt = data['prompt']
+        data['safety_score'] = safety_score
+        prompts = config['PROMPT_PREFIX'] + prompt + config['PROMPT_POSTFIX']
+        print(prompts)
     results = pipe(prompt=prompts,
                    num_inference_steps=30,
-                   negative_prompts= config['NEG_PROMPT'],
+                   negative_prompt = config['NEG_PROMPT'],
                    width=1024,
                    height=1024, 
                    guidance_scale=7,
@@ -78,6 +90,8 @@ def model_inference(batch):
 @validate_json(['u_id', 'prompt'])
 def predict():
     input_data = request.get_json()
+    
+    
     
     # 해당 u_id의 요청이 대기/생성 중이라면, 요청을 거부
     if request_queue.find_by(key='u_id', value=input_data['u_id'])[0] >= 0:
@@ -169,6 +183,7 @@ if __name__ == "__main__":
         config = toml.load(file)
         print(config)
     pipe = load_model(config, device)
+    safety_checker = pipeline("text-classification", model=config["PROMPT_SAFETY_CHECKER"], device=0)
     Thread(target=process_batch).start()
     
     # ngrok으로 공개할 포트 설정 (Flask 기본 포트는 5000)
