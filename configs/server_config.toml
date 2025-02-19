@@ -1,8 +1,8 @@
 
 BASE_MODEL = "cagliostrolab/animagine-xl-3.1"
-LORA = "/home/aidml/sjwi/INU_MASCOTT/train_results/INU_animagineV_3_1.safetensors"
+LORA = "train_results/INU_animagineV_3_1.safetensors"
 PROMPT_SAFETY_CHECKER = "ezb/NSFW-Prompt-Detector"
-
+SAFETY_THRESHOLD = 0.1
 PROMPT_PREFIX = '1boy, "TOK", blue hair, '
 PROMPT_POSTFIX = ', very aesthetic, masterpiece'
 NEG_PROMPT = "nsfw, nude, lowres, bad, error, fewer, extra, missing, worst quality, low quality, bad anatomy, unfinished, displeasing, watermark"

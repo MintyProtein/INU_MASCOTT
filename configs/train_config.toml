@@ -10,8 +10,8 @@ vae = "cagliostrolab/animagine-xl-3.1"
 [dataset_arguments]
 shuffle_caption = true
 debug_dataset = false
-in_json = "/hdd1/aidml/sjwi/INU_Torchy/datasets/INU_0501/INU_0501.json"
-train_data_dir = "/hdd1/aidml/sjwi/INU_Torchy/datasets/INU_0501"
+in_json = "../datasets/metadata.json"
+train_data_dir = "../datasets/"
 dataset_repeats = 2
 keep_tokens_separator = "|||"
 resolution = "1024, 1024"
@@ -22,7 +22,7 @@ token_warmup_min = 1
 token_warmup_step = 0
 
 [training_arguments]
-output_dir = "/hdd1/aidml/sjwi/INU_Torchy/train_results/"
+output_dir = "train_results/"
 output_name = "INU_lora"
 save_every_n_steps = 500
 save_last_n_steps = 3000
@@ -44,8 +44,8 @@ num_cpu_threads_per_process = 4
 
 [logging_arguments]
 log_with = "wandb"
-log_tracker_name = "animagine-xl-3.1"
-logging_dir = "/hdd1/aidml/sjwi/INU_Torchy/train_results/logs"
+log_tracker_name = "INU_MASCOTT"
+logging_dir = "train_results/logs"
 
 [sample_prompt_arguments]
 sample_every_n_steps = 500
