@@ -11,7 +11,7 @@ from PIL import Image
 
 KST = timezone(timedelta(hours=9, minutes=11))
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
-AVG_GENERATION_TIME = 13
+AVG_GENERATION_TIME = 7
 
 def image_to_base64(image_path):
     with open(image_path, "rb") as image_file:

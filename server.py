@@ -11,7 +11,6 @@ from transformers import pipeline
 from diffusers import StableDiffusionXLPipeline, EulerAncestralDiscreteScheduler
 from pyngrok import ngrok  
 from flask import Flask, request, jsonify
-from src.safety_checker import KeywordNSFWFilter
 from src.server_utils import image_to_base64, RequestQueue, save_results, DATETIME_FORMAT, KST, AVG_GENERATION_TIME, validate_json
 from flask_cors import CORS
 
@@ -25,7 +24,7 @@ request_queue = RequestQueue()
 def parse_args(input_args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--config_file", type=str, default="configs/server.toml"
+        "--config_file", type=str, default="configs/server_config.toml"
     )
     if input_args is not None:
         args = parser.parse_args(input_args)
@@ -38,7 +37,7 @@ def load_model(config, device):
     pipe = StableDiffusionXLPipeline.from_pretrained(
         config["BASE_MODEL"],
         torch_dtype=torch.float16,
-        custom_pipeline="lpw_stable_diffusion_xl",
+        #custom_pipeline="lpw_stable_diffusion_xl",
         use_safetensors=True,
     )
     pipe.load_lora_weights(config['LORA'])
@@ -62,11 +61,13 @@ def process_batch():
 
 def model_inference(batch):
     for data in batch:
+        # Prompt의 Safety score 계산
         nsfw_result, safety_score = safety_checker(data['prompt'])[0].values()
+        
         if nsfw_result.lower() == 'nsfw':
             safety_score = 1 - safety_score
-
-        if safety_score < 0.2:
+        if safety_score < config['SAFETY_THRESHOLD']:
+            # Safety Score가 낮으면 경찰 이미지를 생성 (Just for fun)
             prompt = "police uniform, angry face, police car"
         else:
             prompt = data['prompt']
